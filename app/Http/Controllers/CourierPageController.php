@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Order;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -11,7 +12,11 @@ class CourierPageController extends Controller
 {
     public function dashboard(): View
     {
-        return view('courier.dashboard');
+        $ordersCount = Order::query()
+            ->where('courier_id', auth()->id())
+            ->count();
+
+        return view('courier.dashboard', compact('ordersCount'));
     }
 
     public function login(): View
@@ -46,12 +51,24 @@ class CourierPageController extends Controller
 
     public function orders(): View
     {
-        return view('courier.orders');
+        $orders = Order::query()
+            ->with('parcelLocker')
+            ->where('courier_id', auth()->id())
+            ->orderByDesc('courier_created_at')
+            ->get();
+
+        return view('courier.orders', compact('orders'));
     }
 
-    public function showOrder(int $order): View
+    public function showOrder(int $orderNumber): View
     {
-        return view('courier.order', ['orderNumber' => $order]);
+        $order = Order::query()
+            ->with(['parcelLocker', 'items', 'lockerCells'])
+            ->where('number', $orderNumber)
+            ->where('courier_id', auth()->id())
+            ->firstOrFail();
+
+        return view('courier.order', compact('order'));
     }
 
     public function notifications(): View

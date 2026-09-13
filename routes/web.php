@@ -11,8 +11,8 @@ Route::middleware('guest')->group(function (): void {
 Route::middleware('auth')->group(function (): void {
     Route::get('/', [CourierPageController::class, 'dashboard'])->name('dashboard');
     Route::get('/orders', [CourierPageController::class, 'orders'])->name('orders.index');
-    Route::get('/orders/{order}', [CourierPageController::class, 'showOrder'])
-        ->whereNumber('order')
+    Route::get('/orders/{orderNumber}', [CourierPageController::class, 'showOrder'])
+        ->whereNumber('orderNumber')
         ->name('orders.show');
     Route::get('/notifications', [CourierPageController::class, 'notifications'])->name('notifications.index');
     Route::get('/settings', [CourierPageController::class, 'settings'])->name('settings');
