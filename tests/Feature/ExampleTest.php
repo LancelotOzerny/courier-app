@@ -34,5 +34,10 @@ test('courier can sign in by login and sees own login', function () {
     ])->assertRedirect(route('dashboard'));
 
     $this->assertAuthenticatedAs($user);
-    $this->get(route('dashboard'))->assertOk()->assertSee('courier-test');
+    $this->get(route('dashboard'))->assertOk()->assertSee("[{$user->id}] courier-test");
+    $this->get(route('settings'))
+        ->assertOk()
+        ->assertSee($user->email)
+        ->assertSee($user->phone)
+        ->assertDontSee('ID пользователя');
 });

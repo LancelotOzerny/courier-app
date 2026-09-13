@@ -11,7 +11,7 @@
     <div class="page">
         <header class="header">
             @isset($showLogin)
-                <a class="header__login" href="{{ route('settings') }}">{{ auth()->user()->login }}</a>
+                <a class="header__login" href="{{ route('settings') }}">[{{ auth()->id() }}] {{ auth()->user()->login }}</a>
             @endisset
             <h1 class="header__title">{{ $heading }}</h1>
             @isset($subtitle)
