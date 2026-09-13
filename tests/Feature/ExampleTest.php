@@ -83,6 +83,41 @@ test('orders API creates an order for the specified courier', function () {
     $this->assertDatabaseCount('order_cells', 2);
 });
 
+test('orders API creates an unassigned order and later assigns a courier', function () {
+    config()->set('courier.orders_api_token', 'test-api-token');
+
+    $this->postJson(route('api.orders.store'), [
+        'number' => 1852,
+        'parcel_locker' => [
+            'number' => 'ПВЗ-12',
+            'address' => 'ул. Победы, 3',
+        ],
+        'items' => [['name' => 'Чай', 'quantity' => 1]],
+        'cells' => ['B-01'],
+    ], ['X-API-Token' => 'test-api-token'])
+        ->assertCreated()
+        ->assertJsonPath('data.courier_login', null)
+        ->assertJsonPath('data.courier_created_at', null);
+
+    $this->getJson(route('api.orders.index'), ['X-API-Token' => 'test-api-token'])
+        ->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.number', 1852);
+
+    $courier = User::factory()->create(['login' => 'assigned-courier']);
+
+    $this->patchJson(route('api.orders.courier.update', ['orderNumber' => 1852]), [
+        'courier_login' => $courier->login,
+    ], ['X-API-Token' => 'test-api-token'])
+        ->assertOk()
+        ->assertJsonPath('data.courier_login', 'assigned-courier');
+
+    $this->assertDatabaseHas('orders', [
+        'number' => 1852,
+        'courier_id' => $courier->id,
+    ]);
+});
+
 test('users API returns a paginated list without password hashes', function () {
     config()->set('courier.orders_api_token', 'test-api-token');
 
