@@ -93,6 +93,39 @@ class OrderImportController extends Controller
         ]);
     }
 
+    public function updateParcelLocker(Request $request, int $orderNumber): JsonResponse
+    {
+        $data = $request->validate([
+            'parcel_locker' => ['required', 'array:number,address'],
+            'parcel_locker.number' => ['required', 'string', 'max:255'],
+            'parcel_locker.address' => ['required', 'string', 'max:255'],
+            'cells' => ['required', 'array', 'min:1'],
+            'cells.*' => ['required', 'string', 'max:255', 'distinct'],
+        ]);
+
+        $order = DB::transaction(function () use ($data, $orderNumber): Order {
+            $order = Order::query()->where('number', $orderNumber)->firstOrFail();
+            $parcelLocker = ParcelLocker::query()->updateOrCreate(
+                ['number' => $data['parcel_locker']['number']],
+                ['address' => $data['parcel_locker']['address']],
+            );
+
+            $cellIds = collect($data['cells'])
+                ->map(fn (string $number): int => LockerCell::query()->firstOrCreate([
+                    'parcel_locker_id' => $parcelLocker->id,
+                    'number' => $number,
+                ])->id)
+                ->all();
+
+            $order->update(['parcel_locker_id' => $parcelLocker->id]);
+            $order->lockerCells()->sync($cellIds);
+
+            return $order->load(['courier', 'parcelLocker', 'items', 'lockerCells']);
+        });
+
+        return response()->json(['data' => $this->orderData($order)]);
+    }
+
     /** @return array<string, mixed> */
     private function orderData(Order $order): array
     {

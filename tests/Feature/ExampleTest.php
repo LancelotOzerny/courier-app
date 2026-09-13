@@ -81,6 +81,21 @@ test('orders API creates an order for the specified courier', function () {
     ]);
     $this->assertDatabaseCount('order_items', 2);
     $this->assertDatabaseCount('order_cells', 2);
+
+    $this->patchJson(route('api.orders.parcel-locker.update', ['orderNumber' => 1842]), [
+        'parcel_locker' => [
+            'number' => 'ПВЗ-09',
+            'address' => 'ул. Пушкина, 7',
+        ],
+        'cells' => ['C-03', 'C-04'],
+    ], ['X-API-Token' => 'test-api-token'])
+        ->assertOk()
+        ->assertJsonPath('data.parcel_locker.number', 'ПВЗ-09')
+        ->assertJsonPath('data.parcel_locker.address', 'ул. Пушкина, 7')
+        ->assertJsonPath('data.cells.0', 'C-03')
+        ->assertJsonPath('data.cells.1', 'C-04');
+
+    $this->assertDatabaseCount('order_cells', 2);
 });
 
 test('orders API creates an unassigned order and later assigns a courier', function () {
