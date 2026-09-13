@@ -18,7 +18,6 @@ class OrderImportController extends Controller
         $data = $request->validate([
             'number' => ['required', 'integer', 'min:1', 'unique:orders,number'],
             'courier_login' => ['required', 'string', 'max:255', 'exists:users,login'],
-            'courier_created_at' => ['required', 'date'],
             'parcel_locker' => ['required', 'array:number,address'],
             'parcel_locker.number' => ['required', 'string', 'max:255'],
             'parcel_locker.address' => ['required', 'string', 'max:255'],
@@ -41,7 +40,7 @@ class OrderImportController extends Controller
                 'number' => $data['number'],
                 'courier_id' => $courier->id,
                 'parcel_locker_id' => $parcelLocker->id,
-                'courier_created_at' => $data['courier_created_at'],
+                'courier_created_at' => now(),
             ]);
 
             $order->items()->createMany($data['items']);

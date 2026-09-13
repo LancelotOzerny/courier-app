@@ -59,7 +59,6 @@ test('orders API creates an order for the specified courier', function () {
     $this->postJson(route('api.orders.store'), [
         'number' => 1842,
         'courier_login' => $courier->login,
-        'courier_created_at' => '2026-09-13T14:20:00+03:00',
         'parcel_locker' => [
             'number' => 'ПВЗ-07',
             'address' => 'ул. Ленина, 12',
