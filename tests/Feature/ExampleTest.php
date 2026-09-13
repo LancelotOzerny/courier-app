@@ -83,3 +83,39 @@ test('orders API creates an order for the specified courier', function () {
     $this->assertDatabaseCount('order_items', 2);
     $this->assertDatabaseCount('order_cells', 2);
 });
+
+test('users API returns a paginated list without password hashes', function () {
+    config()->set('courier.orders_api_token', 'test-api-token');
+
+    $users = User::factory()->count(3)->create();
+
+    $this->getJson(route('api.users.index', ['limit' => 2]), ['X-API-Token' => 'test-api-token'])
+        ->assertOk()
+        ->assertJsonCount(2, 'data')
+        ->assertJsonPath('meta.total', 3)
+        ->assertJsonPath('meta.limit', 2)
+        ->assertJsonPath('meta.current_page', 1)
+        ->assertJsonPath('meta.last_page', 2)
+        ->assertDontSee($users->first()->password_hash);
+});
+
+test('users API creates a user and stores only a password hash', function () {
+    config()->set('courier.orders_api_token', 'test-api-token');
+
+    $response = $this->postJson(route('api.users.store'), [
+        'login' => 'petr',
+        'email' => 'petr@example.test',
+        'phone' => '+79990000005',
+        'password' => 'Safe-password-2026',
+    ], ['X-API-Token' => 'test-api-token']);
+
+    $response
+        ->assertCreated()
+        ->assertJsonPath('data.login', 'petr')
+        ->assertJsonPath('data.email', 'petr@example.test')
+        ->assertJsonMissing(['password' => 'Safe-password-2026']);
+
+    $user = User::query()->where('login', 'petr')->firstOrFail();
+
+    expect(Hash::check('Safe-password-2026', $user->password_hash))->toBeTrue();
+});
